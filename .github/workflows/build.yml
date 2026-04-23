@@ -1,0 +1,58 @@
+name: Build Everything
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    name: Target ${{ matrix.platform }}
+    # We use custom tags to route builds to your own PC/Dev Kit machines
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # --- DESKTOP (Public Cloud Runners) ---
+          - platform: Windows
+            runner: windows-latest
+          - platform: macOS
+            runner: macos-latest
+          - platform: Linux
+            runner: ubuntu-latest
+
+          # --- MOBILE (Public Cloud Runners) ---
+          - platform: Android
+            runner: ubuntu-latest
+          - platform: iOS
+            runner: macos-latest
+
+          # --- CONSOLES (Requires YOUR OWN PC as a Runner) ---
+          # Install the Switch/PS5/Xbox SDKs on your local PC and tag it 'dev-kit-pc'
+          - platform: Nintendo-Switch
+            runner: dev-kit-pc
+          - platform: PlayStation-5
+            runner: dev-kit-pc
+          - platform: Xbox-Series-X
+            runner: dev-kit-pc
+
+          # --- LEGACY / HOMEBREW ---
+          # Use tools like DevkitPro or RetroArch build chains
+          - platform: Legacy-Console
+            runner: homebrew-runner
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Logic
+        # This is where your custom build script handles the platform-specific flags
+        run: |
+          echo "Building for ${{ matrix.platform }}..."
+          ./scripts/universal-build.sh --target=${{ matrix.platform }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-build
+          path: ./bin/
